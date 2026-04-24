@@ -1,172 +1,31 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brainfuck JS Compiler</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            font-family: monospace;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            resize: vertical;
-        }
-        .controls {
-            margin: 20px 0;
-            display: flex;
-            gap: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button.clear {
-            background-color: #6c757d;
-        }
-        .output-label {
-            font-weight: bold;
-            margin-top: 10px;
-            display: block;
-        }
-        #output {
-            width: 100%;
-            min-height: 100px;
-            background: #222;
-            color: #0f0;
-            padding: 10px;
-            box-sizing: border-box;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-family: monospace;
-        }
-    </style>
+    <title>BFCompiler</title>
 </head>
 <body>
-
-<div class="container">
-    <h2>Brainfuck コンパイラ</h2>
-    <p>BFコードを入力して「実行」を押してください。</p>
-
-    <textarea id="code" placeholder="コードをここに入力...">++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.</textarea>
-
-    <div class="controls">
-        <button onclick="runBF()">実行</button>
-        <button class="clear" onclick="clearAll()">クリア</button>
+    <textarea id="bf-code" rows="10" cols="30"></textarea>
+    <!-- Command buttons for Brainfuck instructions -->
+    <div>
+        <button onclick="appendCommand('+')">+</button>
+        <button onclick="appendCommand('-')">-</button>
+        <button onclick="appendCommand('>')">&gt;</button>
+        <button onclick="appendCommand('<')">&lt;</button>
+        <button onclick="appendCommand('.')">.</button>
+        <button onclick="appendCommand(',')">,</button>
+        <button onclick="appendCommand('[')">[</button>
+        <button onclick="appendCommand(']')">]</button>
     </div>
-
-    <span class="output-label">出力:</span>
-    <div id="output"></div>
-</div>
-
-<script>
-    function runBF() {
-        const source = document.getElementById('code').value;
-        const outputElement = document.getElementById('output');
-        outputElement.textContent = ''; // 出力をリセット
-
-        // 前処理：BF命令以外の文字を除去
-        const code = source.replace(/[^><\+\-\.,\[\]]/g, '');
-        
-        const memory = new Uint8Array(30000); // 30,000個のメモリセル
-        let ptr = 0;   // データポインタ
-        let pc = 0;    // プログラムカウンタ
-        let output = "";
-
-        // ループの対応関係を事前に計算（高速化のため）
-        const stack = [];
-        const jumps = {};
-        for (let i = 0; i < code.length; i++) {
-            if (code[i] === '[') {
-                stack.push(i);
-            } else if (code[i] === ']') {
-                const start = stack.pop();
-                if (start !== undefined) {
-                    jumps[start] = i;
-                    jumps[i] = start;
-                }
-            }
+    <div>
+        <button id="run-button">Run</button>
+        <button id="clear-button">Clear</button>
+    </div>
+    <script>
+        function appendCommand(command) {
+            document.getElementById('bf-code').value += command;
         }
-
-        // 実行ループ (最大実行ステップ数を制限して無限ループ対策)
-        let steps = 0;
-        const maxSteps = 1000000;
-
-        while (pc < code.length && steps < maxSteps) {
-            const command = code[pc];
-
-            switch (command) {
-                case '>':
-                    ptr++;
-                    break;
-                case '<':
-                    ptr--;
-                    break;
-                case '+':
-                    memory[ptr]++;
-                    break;
-                case '-':
-                    memory[ptr]--;
-                    break;
-                case '.':
-                    output += String.fromCharCode(memory[ptr]);
-                    break;
-                case ',':
-                    // 今回は簡易的に0（またはprompt）
-                    const input = prompt("Input required:");
-                    memory[ptr] = input ? input.charCodeAt(0) : 0;
-                    break;
-                case '[':
-                    if (memory[ptr] === 0) pc = jumps[pc];
-                    break;
-                case ']':
-                    if (memory[ptr] !== 0) pc = jumps[pc];
-                    break;
-            }
-            pc++;
-            steps++;
-        }
-
-        if (steps >= maxSteps) {
-            output += "\n[Error: 実行ステップ数が上限に達しました]";
-        }
-
-        outputElement.textContent = output || "(出力なし)";
-    }
-
-    function clearAll() {
-        document.getElementById('code').value = '';
-        document.getElementById('output').textContent = '';
-    }
-</script>
-
+    </script>
 </body>
 </html>
