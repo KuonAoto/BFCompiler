@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BFCompiler</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        textarea { width: 100%; }
+        #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; min-height: 50px; background: #f9f9f9; }
+    </style>
 </head>
 <body>
-    <textarea id="bf-code" rows="10" cols="30"></textarea>
+    <h1>Brainfuck Compiler</h1>
+    <textarea id="bf-code" rows="10"></textarea>
+    
     <!-- Command buttons for Brainfuck instructions -->
     <div>
         <button onclick="appendCommand('+')">+</button>
@@ -18,14 +25,96 @@
         <button onclick="appendCommand('[')">[</button>
         <button onclick="appendCommand(']')">]</button>
     </div>
+    
     <div>
         <button id="run-button">Run</button>
         <button id="clear-button">Clear</button>
     </div>
+    
+    <h3>Output:</h3>
+    <div id="output"></div>
+
     <script>
         function appendCommand(command) {
             document.getElementById('bf-code').value += command;
         }
+
+        // Brainfuck Interpreter
+        function executeBrainfuck(code) {
+            const memory = new Array(30000).fill(0);
+            let pointer = 0;
+            let codeIndex = 0;
+            let output = '';
+
+            const loops = [];
+            
+            // Find matching brackets
+            for (let i = 0; i < code.length; i++) {
+                if (code[i] === '[') loops.push(i);
+                if (code[i] === ']') {
+                    const matchingBracket = loops.pop();
+                    loops[matchingBracket] = i;
+                    loops[i] = matchingBracket;
+                }
+            }
+
+            while (codeIndex < code.length) {
+                const command = code[codeIndex];
+
+                switch (command) {
+                    case '+':
+                        memory[pointer] = (memory[pointer] + 1) % 256;
+                        break;
+                    case '-':
+                        memory[pointer] = (memory[pointer] - 1 + 256) % 256;
+                        break;
+                    case '>':
+                        pointer++;
+                        if (pointer >= memory.length) pointer = memory.length - 1;
+                        break;
+                    case '<':
+                        pointer--;
+                        if (pointer < 0) pointer = 0;
+                        break;
+                    case '.':
+                        output += String.fromCharCode(memory[pointer]);
+                        break;
+                    case ',':
+                        // Skip input for now
+                        break;
+                    case '[':
+                        if (memory[pointer] === 0) {
+                            codeIndex = loops[codeIndex];
+                        }
+                        break;
+                    case ']':
+                        if (memory[pointer] !== 0) {
+                            codeIndex = loops[codeIndex];
+                        }
+                        break;
+                }
+                codeIndex++;
+            }
+
+            return output;
+        }
+
+        // Run button
+        document.getElementById('run-button').onclick = function() {
+            const code = document.getElementById('bf-code').value;
+            try {
+                const result = executeBrainfuck(code);
+                document.getElementById('output').textContent = result || '(no output)';
+            } catch (e) {
+                document.getElementById('output').textContent = 'Error: ' + e.message;
+            }
+        };
+
+        // Clear button
+        document.getElementById('clear-button').onclick = function() {
+            document.getElementById('bf-code').value = '';
+            document.getElementById('output').textContent = '';
+        };
     </script>
 </body>
 </html>
